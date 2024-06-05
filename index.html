@@ -1,51 +1,64 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>AR.js with A-Frame</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+    <meta charset="UTF-8">
+    <title>Babylon.js WebXR AR</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.webxr.min.js"></script>
     <style>
       body { margin: 0; overflow: hidden; }
-      #ar-button {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        z-index: 999;
-        padding: 10px 20px;
-        background: white;
-        border: 1px solid black;
-        font-size: 16px;
-        cursor: pointer;
-      }
+      canvas { width: 100%; height: 100%; display: block; }
     </style>
   </head>
   <body>
-    <button id="ar-button">Start AR</button>
-    <a-scene embedded arjs="sourceType: webcam;">
-      <a-marker preset="hiro" id="hiro-marker">
-        <a-box id="cube" position="0 8 0" material="color: red;"></a-box>
-      </a-marker>
-      <a-entity camera></a-entity>
-    </a-scene>
-
+    <canvas id="renderCanvas"></canvas>
     <script>
-      const startButton = document.getElementById('ar-button');
-      startButton.addEventListener('click', () => {
-        startButton.style.display = 'none';
-        document.querySelector('a-scene').style.display = 'block';
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+
+      const createScene = async function() {
+        const scene = new BABYLON.Scene(engine);
+
+        // Create a camera and light
+        const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, BABYLON.Vector3.Zero(), scene);
+        camera.attachControl(canvas, true);
+        const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+
+        // Create a cube
+        const box = BABYLON.MeshBuilder.CreateBox("box", { size: 0.1 }, scene);
+        box.position.y = 1; // Start with the cube at y = 1
+
+        // Enable WebXR for AR
+        const xr = await scene.createDefaultXRExperienceAsync({
+          uiOptions: {
+            sessionMode: 'immersive-ar',
+          },
+          optionalFeatures: true
+        });
+
+        // Move the cube to y = 8 after detecting a hit test
+        const xrTest = xr.baseExperience.featuresManager.enableFeature(BABYLON.WebXRHitTest, "latest");
+        xrTest.onHitTestResultObservable.add((results) => {
+          if (results.length) {
+            const hit = results[0];
+            hit.transformationMatrix.decompose(null, null, box.position);
+            box.position.y = 8;
+          }
+        });
+
+        return scene;
+      };
+
+      const scene = createScene();
+
+      engine.runRenderLoop(function() {
+        scene.then(scene => scene.render());
       });
 
-      document.querySelector('a-scene').style.display = 'none';
-
-      const cube = document.querySelector('#cube');
-      const marker = document.querySelector('#hiro-marker');
-
-      marker.addEventListener('markerFound', () => {
-        cube.setAttribute('visible', 'true');
-      });
-
-      marker.addEventListener('markerLost', () => {
-        cube.setAttribute('visible', 'true');
+      window.addEventListener("resize", function() {
+        engine.resize();
       });
     </script>
   </body>
