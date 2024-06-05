@@ -1,29 +1,57 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <script src="https://threejs.org/build/three.js"></script>
-    <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
-  </head>
-  <body style="margin : 0px; overflow: hidden;">
-    <a-scene embedded arjs='sourceType: webcam;'>
-      <a-marker preset="hiro">
-        <a-entity id="carModel"></a-entity>
-      </a-marker>
-      <a-entity camera></a-entity>
-    </a-scene>
+<head>
+    <title>Babylon.js com WebXR - Exemplo de AR</title>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <style>
+        html, body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
     <script>
-      window.addEventListener('DOMContentLoaded', function() {
-        var scene = document.querySelector('a-scene');
-        var model = document.querySelector('#carModel');
+        var canvas = document.getElementById("renderCanvas");
 
-        BABYLON.SceneLoader.LoadAssetContainer("", "Car_f3.gltf", scene, function (container) {
-          var meshes = container.meshes;
-          var materials = container.materials;
+        var createScene = function() {
+            var scene = new BABYLON.Scene(engine);
+            var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
+            camera.setTarget(BABYLON.Vector3.Zero());
+            camera.attachControl(canvas, true);
 
-          model.object3D.add(meshes[0]);
+            var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+            light.intensity = 0.7;
+
+            BABYLON.SceneLoader.ImportMesh("", "https://models.babylonjs.com/BoomBox/", "boombox.glb", scene, function (newMeshes) {
+                newMeshes[0].position = BABYLON.Vector3.Zero();
+            });
+
+            return scene;
+        };
+
+        var engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+        var scene = createScene();
+
+        engine.runRenderLoop(function () {
+            if (scene) {
+                scene.render();
+            }
         });
-      });
+
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
     </script>
-  </body>
+</body>
 </html>
