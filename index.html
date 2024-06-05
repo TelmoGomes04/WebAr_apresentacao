@@ -4,25 +4,31 @@
     <title>AR.js with A-Frame</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.0.6/aframe/build/aframe-ar.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+    </style>
   </head>
-  <body style="margin: 0; overflow: hidden;">
-    <a-scene embedded arjs='sourceType: webcam;'>
+  <body>
+    <a-scene embedded arjs="sourceType: webcam;">
       <a-marker preset="hiro" id="hiro-marker">
-        <a-box id="cube" position="0 8 0" material="color: red;"></a-box>
+        <a-box id="cube" position="0 0.5 0" material="color: red;" visible="false"></a-box>
       </a-marker>
       <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-      let cube = document.querySelector('#cube');
-      let marker = document.querySelector('#hiro-marker');
+      const cube = document.querySelector('#cube');
+      const marker = document.querySelector('#hiro-marker');
 
       marker.addEventListener('markerFound', () => {
         cube.setAttribute('visible', 'true');
+        cube.setAttribute('position', { x: 0, y: 8, z: 0 });
       });
 
       marker.addEventListener('markerLost', () => {
-        // Keep the cube visible when marker is lost
+        // Keep the cube visible and at the same position even when the marker is lost
+        const position = cube.getAttribute('position');
+        cube.setAttribute('position', { x: position.x, y: 8, z: position.z });
         cube.setAttribute('visible', 'true');
       });
     </script>
